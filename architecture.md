@@ -2,63 +2,56 @@
 
 ```mermaid
 flowchart TD
-    subgraph USER_START [User]
-        Start["Send POST Request with Goal"]
+    subgraph FRONTEND [HuggingFace Spaces]
+        UI["Web UI (Submit Goal)"]
+        Popup["Success Modal"]
     end
 
     subgraph AWS [AWS Cloud]
         Gateway["API Gateway"]
-        Lambda["AWS Lambda (Python Loop)"]
-        Bedrock["AWS Bedrock (Reasoning)"]
+        LambdaSync["AWS Lambda (Synchronous Receiver)"]
+        LambdaAsync["AWS Lambda (Asynchronous Worker)"]
+        Bedrock["Amazon Bedrock (Nova Pro Orchestrator)"]
     end
 
     subgraph APIFY [Apify]
-        Scraper["Web Scraper"]
+        Scraper["Web Scraper Tool"]
     end
 
     subgraph BOX [Box Cloud]
-        Storage["Box Storage (Vault)"]
-        BoxAI["Box AI (Extraction & Drafting)"]
+        Storage["Box Folders (01_raw, 02_dossiers, 03_drafts)"]
+        BoxAI["Box AI (Extraction & Drafter Tools)"]
     end
 
-    subgraph USER_END [User]
-        Review["Review Final Drafts"]
-    end
+    %% Sync Flow
+    UI -->|"1. POST Request"| Gateway
+    Gateway -->|"2. Forward Payload"| LambdaSync
+    LambdaSync -->|"3. Fork Process (Event Invoke)"| LambdaAsync
+    LambdaSync -->|"4. Return 200 OK"| Gateway
+    Gateway -->|"5. Trigger"| Popup
 
-    Start -->|"Trigger"| Gateway
-    Gateway -->|"Payload"| Lambda
+    %% Async Agent Loop
+    LambdaAsync -->|"6. Start Loop"| Bedrock
     
-    Lambda -->|"1. What next?"| Bedrock
-    Bedrock -->|"Decision: Expand Query & Scrape"| Lambda
+    %% Web Search
+    Bedrock -->|"Decision: apify_search"| LambdaAsync
+    LambdaAsync -->|"7. Execute Tool"| Scraper
+    Scraper -->|"Raw HTML"| LambdaAsync
     
-    Lambda -->|"2. Run Search"| Scraper
-    Scraper -->|"Raw HTML or Directory Links"| Lambda
-    Lambda -->|"3. Save HTML"| Storage
+    %% Extraction
+    Bedrock -->|"Decision: extract_grant_data"| LambdaAsync
+    LambdaAsync -->|"8. Upload HTML"| Storage
+    LambdaAsync -->|"9. Ask Box AI"| BoxAI
+    BoxAI -->|"Qualified JSON Dossier"| LambdaAsync
+    LambdaAsync -->|"10. Save Dossier"| Storage
     
-    Lambda -->|"4. What next?"| Bedrock
+    %% Drafting
+    Bedrock -->|"Decision: draft_email"| LambdaAsync
+    LambdaAsync -->|"11. Generate Draft"| BoxAI
+    BoxAI -->|"Email Text"| LambdaAsync
+    LambdaAsync -->|"12. Save Draft"| Storage
     
-    %% Aggregator Mining Loop
-    Bedrock -->|"Decision: Found Aggregator"| Lambda
-    Lambda -.->|"Mine Sub-Links"| Scraper
-    
-    %% Primary Extraction Loop
-    Bedrock -->|"Decision: Extract Data"| Lambda
-    Lambda -->|"5. Parse Single Grant"| BoxAI
-    BoxAI -->|"JSON Data"| Lambda
-    Lambda -->|"6. Save JSON"| Storage
-    
-    Lambda -->|"7. What next?"| Bedrock
-    Bedrock -->|"Decision: Draft Email"| Lambda
-    
-    Lambda -->|"8. Write Draft"| BoxAI
-    BoxAI -->|"Email Text"| Lambda
-    Lambda -->|"9. Save Draft"| Storage
-    
-    Lambda -->|"10. Goal Met?"| Bedrock
-    Bedrock -->|"No, keep searching"| Lambda
-    Lambda -.->|"Loop Back"| Bedrock
-    
-    Bedrock -->|"Yes, Stop"| Lambda
-    
-    Storage -.->|"View Files securely"| Review
+    %% Final
+    Bedrock -->|"Goal Met (Limit Reached)"| LambdaAsync
+    LambdaAsync -->|"13. Save Agent Log"| Storage
 ```
