@@ -7,6 +7,9 @@ Reach Forward Robotics is a student-led initiative building open-source robotics
 
 Unlike a rigid pipeline, this system uses an **LLM Orchestrator** (Amazon Bedrock / Nova Pro) that dynamically determines how to fulfill a user's natural language goal.
 
+## Hackathon Demonstration
+https://github.com/TwinPeaksTownie/rfr_grant/raw/main/assets/hackathon_video.mov
+
 ## Architecture & Tech Stack
 - **Frontend (HuggingFace Spaces)**: A lightweight UI where users submit natural language goals (e.g., *"Find me a Jetson Thor and some motors"*).
 - **Agent Orchestrator (AWS Bedrock & AWS Lambda)**: The brain of the operation. It interprets the goal, decides which tools to call, and orchestrates the entire workflow asynchronously to bypass API Gateway timeouts.
