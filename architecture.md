@@ -2,9 +2,8 @@
 
 ```mermaid
 flowchart TD
-    subgraph USER [User]
+    subgraph USER_START [User]
         Start["Define Hardware/Grant Goal"]
-        Review["Review Final Drafts"]
     end
 
     subgraph FRONTEND [HuggingFace Spaces]
@@ -28,6 +27,10 @@ flowchart TD
         BoxAI["Box AI (Extraction & Drafter Tools)"]
     end
 
+    subgraph USER_END [User]
+        Review["Review Final Drafts"]
+    end
+
     %% Sync Flow
     Start -->|"Enters goal"| UI
     UI -->|"1. POST Request"| Gateway
@@ -35,7 +38,6 @@ flowchart TD
     LambdaSync -->|"3. Fork Process (Event Invoke)"| LambdaAsync
     LambdaSync -->|"4. Return 200 OK"| Gateway
     Gateway -->|"5. Trigger"| Popup
-    Popup -.->|"Alerts User"| Start
 
     %% Async Agent Loop
     LambdaAsync -->|"6. Start Loop"| Bedrock
