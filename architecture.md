@@ -2,6 +2,11 @@
 
 ```mermaid
 flowchart TD
+    subgraph USER [User]
+        Start["Define Hardware/Grant Goal"]
+        Review["Review Final Drafts"]
+    end
+
     subgraph FRONTEND [HuggingFace Spaces]
         UI["Web UI (Submit Goal)"]
         Popup["Success Modal"]
@@ -24,11 +29,13 @@ flowchart TD
     end
 
     %% Sync Flow
+    Start -->|"Enters goal"| UI
     UI -->|"1. POST Request"| Gateway
     Gateway -->|"2. Forward Payload"| LambdaSync
     LambdaSync -->|"3. Fork Process (Event Invoke)"| LambdaAsync
     LambdaSync -->|"4. Return 200 OK"| Gateway
     Gateway -->|"5. Trigger"| Popup
+    Popup -.->|"Alerts User"| Start
 
     %% Async Agent Loop
     LambdaAsync -->|"6. Start Loop"| Bedrock
@@ -54,4 +61,6 @@ flowchart TD
     %% Final
     Bedrock -->|"Goal Met (Limit Reached)"| LambdaAsync
     LambdaAsync -->|"13. Save Agent Log"| Storage
+
+    Storage -.->|"Access drafted emails securely"| Review
 ```
